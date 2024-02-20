@@ -38,6 +38,7 @@ Doc
 ```
 
 XGBoost model (classification task) was created by the following Python scrip
+[xg_boost_classification_hyperparameter.ipynb](https://github.com/AlexeyAlexey/ai_random_forest_py/blob/main/xg_boost_classification_hyperparameter.ipynb)
 
 The goal is to load this model and test if we can use a model to predict
 

@@ -1,0 +1,98 @@
+# Importing XGBoost from Python
+
+```elixir
+Mix.install(
+  [
+    {:exgboost, "~> 0.3.1", override: true},
+    {:nx, "~> 0.6"},
+    {:tokenizers, "~> 0.4.0"},
+    {:bumblebee, "~> 0.4.2"},
+    {:exla, "~> 0.5"},
+    {:kino, "~> 0.10.0"},
+    {:kino_explorer, "~> 0.1.4"},
+    {:scidata, "~> 0.1"},
+    {:scholar, "~> 0.1"},
+    {:explorer, "~> 0.7.0"},
+    {:mighty, git: "https://github.com/acalejos/mighty.git"},
+    {:mockingjay,
+     git: "https://github.com/acalejos/mockingjay.git", branch: "make_tree_travs_jit_compilable"}
+  ],
+  config: [nx: [default_defn_options: [compiler: EXLA], default_backend: {EXLA.Backend, []}]]
+)
+```
+
+## Section
+
+There is an interesting article
+
+**[Introducing EXGBoost: Gradient Boosting in Elixir](https://dockyard.com/blog/2023/07/18/introducing-exgboost-gradient-boosting-in-elixir)**
+
+Doc
+
+[Python Package Introduction](https://xgboost.readthedocs.io/en/latest/python/python_intro.html#scikit-learn-interface)
+
+[Introduction to Model IO](https://xgboost.readthedocs.io/en/latest/tutorials/saving_model.html)
+
+```elixir
+
+```
+
+XGBoost model (classification task) was created by the following Python scrip
+
+The goal is to load this model and test if we can use a model to predict
+
+<!-- livebook:{"break_markdown":true} -->
+
+I am loading the same data that I used to train a model. I use the same dataset only to test that the model is loaded
+
+```elixir
+alias Explorer.DataFrame, as: DF
+require Explorer.DataFrame
+
+data_path = "#{__DIR__}/contacts/202402070946/segments.csv"
+```
+
+```elixir
+df = Explorer.DataFrame.from_csv!(data_path)
+```
+
+Deleting ```created_date``` and ```id``` columns
+
+```elixir
+df = Explorer.DataFrame.discard(df, ["created_date", "id"])
+```
+
+```elixir
+targets = ~w(paying)
+
+x_df = Explorer.DataFrame.discard(df, ["paying"])
+
+x =
+  x_df
+  |> Nx.stack(axis: 1)
+
+y = Explorer.Series.to_list(df["paying"]) |> Nx.stack(axis: 0)
+```
+
+Now we are going to load the EXGBoost model itself.
+
+```elixir
+Nx.default_backend(Nx.BinaryBackend)
+
+model = EXGBoost.read_model("#{Path.dirname(__ENV__.file)}/python_xg_boost_model.json")
+```
+
+```elixir
+Nx.default_backend(Nx.BinaryBackend)
+
+x = Nx.backend_copy(x)
+y = Nx.backend_copy(y)
+
+preds = EXGBoost.predict(model, x) |> Scholar.Preprocessing.binarize(threshold: 0.5)
+
+Scholar.Metrics.Classification.accuracy(y, preds)
+```
+
+```elixir
+
+```
